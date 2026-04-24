@@ -1,0 +1,24 @@
+model_name: kronos
+mode: zero_shot_foundation
+context_length: 64
+prediction_length: 5
+target: target_ret_5d
+adapter_mode: vn_equity_daily
+official_repo: https://github.com/shiyu-coder/Kronos
+tokenizer: NeoQuasar/Kronos-Tokenizer-base
+pretrained_model: NeoQuasar/Kronos-small
+device: cpu
+split: test
+latest_only: true
+sample_count: 1
+temperature: 1.0
+top_p: 0.9
+feature_columns:
+  - open_rel
+  - high_rel
+  - low_rel
+  - close_ret
+  - log_volume
+seed: 42
+device: auto
+horizon: 5

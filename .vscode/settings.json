@@ -1,0 +1,15 @@
+{
+  "python.defaultInterpreterPath": ".venv\\Scripts\\python.exe",
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/src"
+  ],
+  "editor.formatOnSave": true,
+  "notebook.lineNumbers": "on",
+  "notebook.output.textLineLimit": 200,
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/.ruff_cache": true
+  }
+}
+

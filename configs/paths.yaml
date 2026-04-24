@@ -1,0 +1,10 @@
+paths:
+  raw_root: data/raw/vn_stock_daily
+  raw_reference_root: data/raw/reference
+  raw_index_root: data/raw/vn_index_daily
+  interim_root: data/interim
+  processed_root: data/processed
+  shared_root: data/processed/shared
+  notebooks_root: notebooks
+  outputs_root: outputs
+  registry_root: registry

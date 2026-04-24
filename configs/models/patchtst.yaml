@@ -1,0 +1,12 @@
+model_name: patchtst
+seq_len: 64
+pred_len: 5
+patch_len: 16
+patch_stride: 8
+batch_size: 32
+epochs: 30
+learning_rate: 0.0003
+d_model: 128
+n_heads: 4
+dropout: 0.2
+target: target_ret_5d

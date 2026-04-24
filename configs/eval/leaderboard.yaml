@@ -1,0 +1,17 @@
+primary_metric: huber
+secondary_metrics:
+  - rmse
+  - mae
+  - directional_accuracy
+  - information_coefficient
+sort_ascending:
+  huber: true
+  rmse: true
+  mae: true
+  mape: true
+  directional_accuracy: false
+  pearson: false
+  spearman: false
+  information_coefficient: false
+  cumulative_return: false
+  sharpe_proxy: false

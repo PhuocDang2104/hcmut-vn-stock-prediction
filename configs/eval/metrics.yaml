@@ -1,0 +1,25 @@
+regression:
+  - huber
+  - mae
+  - rmse
+  - mape
+  - pearson
+  - spearman
+
+direction:
+  - directional_accuracy
+  - precision_up
+  - recall_up
+  - f1_up
+
+ranking:
+  - information_coefficient
+  - top_k_hit_rate
+  - top_k_realized_return
+  - long_short_spread
+
+trading_proxy:
+  - cumulative_return
+  - win_rate
+  - max_drawdown
+  - sharpe_proxy

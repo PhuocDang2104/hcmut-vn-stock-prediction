@@ -1,0 +1,155 @@
+source: KBS
+listing_source: VCI
+industry_listing_source: KBS
+interval: 1D
+start_date: 2018-01-01
+end_date: 2026-04-14
+
+symbol_source_overrides:
+  "005930.KS": YF
+  "2317.TW": YF
+  AAPL: YF
+  INTC: YF
+  NVDA: YF
+  QCOM: YF
+  AMD: YF
+  TSM: YF
+  GOOGL: YF
+  MSFT: YF
+
+foreign_symbol_metadata:
+  - symbol: "005930.KS"
+    company_name: Samsung Electronics
+    market: KRX
+    country: KR
+    currency: KRW
+    theme_bucket: vietnam_manufacturing_direct
+    vietnam_link: samsung_fdi_electronics_supply_chain
+  - symbol: "2317.TW"
+    company_name: Hon Hai Precision Industry (Foxconn)
+    market: TWSE
+    country: TW
+    currency: TWD
+    theme_bucket: vietnam_manufacturing_direct
+    vietnam_link: apple_supplier_and_electronics_assembly_shift
+  - symbol: AAPL
+    company_name: Apple
+    market: NASDAQ
+    country: US
+    currency: USD
+    theme_bucket: vietnam_supply_chain_direct
+    vietnam_link: demand_signal_for_apple_supplier_chain_in_vietnam
+  - symbol: INTC
+    company_name: Intel
+    market: NASDAQ
+    country: US
+    currency: USD
+    theme_bucket: vietnam_semiconductor_direct
+    vietnam_link: assembly_and_test_cycle_signal
+  - symbol: NVDA
+    company_name: NVIDIA
+    market: NASDAQ
+    country: US
+    currency: USD
+    theme_bucket: vietnam_ai_infrastructure
+    vietnam_link: ai_rd_and_data_center_narrative
+  - symbol: QCOM
+    company_name: Qualcomm
+    market: NASDAQ
+    country: US
+    currency: USD
+    theme_bucket: vietnam_ai_mobile_edge
+    vietnam_link: mobile_edge_ai_and_semiconductor_applied_signal
+  - symbol: AMD
+    company_name: AMD
+    market: NASDAQ
+    country: US
+    currency: USD
+    theme_bucket: vietnam_ai_semiconductor_indirect
+    vietnam_link: ai_and_high_tech_narrative_proxy
+  - symbol: TSM
+    company_name: Taiwan Semiconductor Manufacturing Company
+    market: NYSE
+    country: US
+    currency: USD
+    theme_bucket: global_semiconductor_cycle
+    vietnam_link: global_chip_cycle_proxy_for_vietnam_tech_risk_appetite
+  - symbol: GOOGL
+    company_name: Alphabet
+    market: NASDAQ
+    country: US
+    currency: USD
+    theme_bucket: vietnam_ai_platform_ecosystem
+    vietnam_link: ai_platform_and_cloud_ecosystem_proxy
+  - symbol: MSFT
+    company_name: Microsoft
+    market: NASDAQ
+    country: US
+    currency: USD
+    theme_bucket: global_ai_cloud_macro_tech
+    vietnam_link: cloud_ai_capex_and_enterprise_digitization_proxy
+
+raw_download:
+  universe_scope: broad
+  price_adjustment: adjusted_provider_history
+  value_mode: null
+  sleep_seconds: 0.3
+  include_indices:
+    - VNINDEX
+    - VN30
+
+universes:
+  core: data/universes/core10.txt
+  broad: data/universes/vn_stock_universe_95_plus_foreign_tech.txt
+
+target:
+  name: target_ret_5d
+  horizon: 5
+
+split:
+  train_end: 2023-12-31
+  valid_end: 2024-12-31
+  test_end: 2026-12-31
+
+features:
+  - ret_1d
+  - ret_5d
+  - log_volume
+  - hl_spread
+  - oc_change
+  - rolling_vol_5
+  - rolling_vol_20
+  - ma_ratio_5_20
+  - open_rel
+  - high_rel
+  - low_rel
+  - ma5_rel
+  - ma20_rel
+
+kronos_features:
+  - open_rel
+  - high_rel
+  - low_rel
+  - close_ret
+  - log_volume
+
+model_exports:
+  xlstm_ts:
+    context_length: 64
+  itransformer:
+    seq_len: 64
+    pred_len: 5
+  patchtst:
+    seq_len: 64
+    pred_len: 5
+    patch_len: 16
+    patch_stride: 8
+  kronos:
+    context_length: 64
+    prediction_length: 5
+    feature_columns:
+      - open_rel
+      - high_rel
+      - low_rel
+      - close_ret
+      - log_volume

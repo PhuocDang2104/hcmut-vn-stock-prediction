@@ -1,0 +1,17 @@
+project:
+  name: vn-stock-research
+  timezone: Asia/Saigon
+  seed: 42
+  description: Research repo for Vietnamese equity forecasting with shared data contracts.
+
+research:
+  target_name: target_ret_5d
+  horizon: 5
+  canonical_frequency: 1D
+  comparison_split: test
+
+artifacts:
+  run_id_prefix: run
+  registry_dir: registry
+  outputs_dir: outputs
+
