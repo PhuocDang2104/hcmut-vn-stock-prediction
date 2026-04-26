@@ -433,6 +433,40 @@ Repo cũng sync các artifact tương ứng sang:
 - `outputs/figures/folder_viz/`
 - `outputs/reports/folder_viz/`
 
+## 10.5. Final Model Suite Hiện Tại
+
+Tên kỹ thuật của model production candidate hiện tại:
+
+- `Hybrid xLSTM Direction-Excess Blend`
+
+Tên này thay cho tên thử nghiệm cũ `BestF6-v2`.
+
+Final comparison hiện không còn dùng iTransformer trong bảng chốt. Bộ model đang được so sánh:
+
+- `Hybrid xLSTM Direction-Excess Blend`
+- `CNN-LSTM`
+- `TCN`
+- `LightGBM-style HGBR` nếu package `lightgbm` chưa có trong environment
+- `PatchTST`
+- `Kronos zero-shot` làm reference, không finetune
+
+Artifact final hiện tại:
+
+| Artifact | Path |
+| --- | --- |
+| Hybrid xLSTM prediction | `outputs/final/hybrid_xlstm_direction_excess_blend_predictions.parquet` |
+| Prediction suite | `outputs/final/model_suite_top5/` |
+| Metric suite | `outputs/reports/final_top5_model_suite/top5_model_suite_metrics.csv` |
+| Report suite | `outputs/reports/final_top5_model_suite/top5_model_suite_report.md` |
+| Figure suite | `outputs/figures/final_top5_model_suite/top5_model_suite_longshort.png` |
+
+Kronos caveat:
+
+- Kronos hiện được giữ là zero-shot reference
+- Không finetune trong repo
+- Full historical zero-shot trên CPU rất chậm vì phải forecast từng window
+- Row Kronos trong suite hiện tại là partial full-test snapshot nếu full 95-symbol run chưa hoàn tất
+
 ## 11. Prediction Output Contract
 
 Prediction export để so sánh model phải dùng schema:

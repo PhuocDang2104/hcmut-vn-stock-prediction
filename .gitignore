@@ -48,6 +48,8 @@ outputs/reports/*.md
 outputs/figures/**/*.png
 !outputs/figures/best_f6_v2_top5/
 !outputs/figures/best_f6_v2_top5/*.png
+!outputs/figures/final_top5_model_suite/
+!outputs/figures/final_top5_model_suite/*.png
 registry/experiments/*
 !registry/experiments/.gitkeep
 registry/models/*/*

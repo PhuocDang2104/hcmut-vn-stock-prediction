@@ -1,8 +1,8 @@
 # VN Stock Prediction
 
 <h3 align="center">
-  <b>BestF6-v2 Top-5 Stock Selection for 95-Symbol K-Line Data</b><br>
-  <i>xLSTM-based return, direction, and market-relative blend for 5-session stock ranking</i>
+  <b>Final Top-5 Stock-Selection Suite for 95-Symbol K-Line Data</b><br>
+  <i>Hybrid xLSTM Direction-Excess Blend · CNN-LSTM · TCN · LightGBM-style · PatchTST · Kronos reference</i>
 </h3>
 
 <p align="center">
@@ -16,7 +16,7 @@
 
 ## Abstract
 
-This repository implements a leakage-safe K-line forecasting pipeline for stock selection. The final kept architecture is **BestF6-v2 top-5**, a 5-session return-ranking model that blends return, direction, and market-relative/excess-return signals.
+This repository implements a leakage-safe K-line forecasting pipeline for 5-session stock selection. The final selected model is now named **Hybrid xLSTM Direction-Excess Blend**. It replaces the previous informal `BestF6-v2` name.
 
 Main target:
 
@@ -24,7 +24,14 @@ Main target:
 target_ret_5d = close[t+5] / close[t] - 1
 ```
 
-The final decision metric is not raw price forecasting. The project optimizes stock-selection quality: `IC`, `RankIC`, `Top5 Return`, `LongShort5`, and out-of-time investment P/L proxy.
+The final benchmark removes iTransformer and compares:
+
+- Hybrid xLSTM Direction-Excess Blend
+- CNN-LSTM
+- TCN
+- LightGBM-style tabular gradient boosting
+- PatchTST
+- Kronos zero-shot reference, not retrained
 
 ---
 
@@ -33,14 +40,23 @@ The final decision metric is not raw price forecasting. The project optimizes st
 ```mermaid
 flowchart LR
     A[Raw OHLCV K-line data] --> B[Clean per-symbol panel]
-    B --> C[Relative and market-relative features]
-    C --> D[xLSTM-TS components]
-    D --> E[BestF6-v2 score blend]
-    E --> F[Top-5 portfolio selection]
-    F --> G[Metrics and P/L proxy]
+    B --> C[Relative + market-relative features]
+    C --> D1[Hybrid xLSTM blend]
+    C --> D2[CNN-LSTM]
+    C --> D3[TCN]
+    C --> D4[LightGBM-style tabular model]
+    C --> D5[PatchTST]
+    B --> D6[Kronos zero-shot reference]
+    D1 --> E[Prediction contract]
+    D2 --> E
+    D3 --> E
+    D4 --> E
+    D5 --> E
+    D6 --> E
+    E --> F[Top-5 metrics and ranking report]
 ```
 
-Final score:
+Hybrid xLSTM score:
 
 ```text
 final_score =
@@ -58,67 +74,34 @@ y_true, y_pred, target_name, horizon, run_id
 
 ---
 
-## Final Top-5 Metrics
+## Final Top-5 Model Suite
 
 | Model | Scope | Rows | IC | RankIC | Direction Acc | Balanced Acc | Top5 Return | LongShort5 | Top5 Acc |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| BestF6-v2 | full test | 29,535 | 0.0904 | 0.0852 | 52.65% | 52.41% | 1.7120% | 1.7462% | 58.53% |
-| xLSTM-TS pure | full test | 29,535 | 0.0588 | 0.0507 | 53.61% | 53.09% | 1.3769% | 1.0794% | 55.17% |
-| iTransformer pure | full test | 29,535 | 0.0198 | 0.0047 | 50.85% | 50.61% | 1.0674% | 0.6089% | 53.94% |
-| Kronos zero-shot | latest only | 95 | 0.0497 | 0.1152 | 61.05% | 67.72% | 6.1400% | -1.0972% | 100.00% |
+| Hybrid xLSTM Direction-Excess Blend | full test | 29,535 | 0.0904 | 0.0852 | 52.65% | 52.41% | 1.7120% | 1.7462% | 58.53% |
+| LightGBM-style HGBR | full test | 29,535 | 0.0545 | 0.0379 | 50.53% | 49.89% | 1.2315% | 1.3634% | 55.41% |
+| CNN-LSTM | full test | 29,535 | 0.0522 | 0.0433 | 51.80% | 50.32% | 1.2969% | 1.2686% | 56.70% |
+| TCN | full test | 29,535 | 0.0212 | 0.0216 | 48.91% | 48.89% | 0.7223% | 0.4266% | 54.68% |
+| PatchTST | full test | 29,535 | 0.0185 | 0.0150 | 48.58% | 49.06% | 0.6983% | 0.2568% | 52.78% |
+| Kronos zero-shot | partial full-test | 18,978 | 0.0069 | 0.0189 | 50.95% | 51.08% | 0.3581% | -0.1264% | 52.42% |
 
-Kronos is latest-only in the current adapter, so it is a point-in-time reference instead of a full historical benchmark.
+Kronos is listed as a reference only. The current full-test Kronos run stopped at `61/95` symbols, so the row is not directly comparable with full 95-symbol models yet.
 
 Decision:
 
-- BestF6-v2 is kept because it wins IC, RankIC, Top5 Return and LongShort5 on full test.
-- xLSTM-TS pure has higher raw Direction Accuracy, but weaker stock-ranking performance.
-- iTransformer is weaker in this run.
-- Kronos needs historical zero-shot inference before direct production comparison.
-
----
-
-## Investment P/L Proxy
-
-Settings:
-
-- Test split only.
-- Top 5 stocks selected by `BestF6-v2` score.
-- Rebalance every 5 sessions.
-- Initial capital: `100,000,000`.
-- Transaction cost: `15 bps`.
-
-| Mode | Final Capital | Profit | Total Return | Benchmark Return | Excess Profit | Sharpe Proxy | Hit Rate | Max Drawdown |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Long-only top-5 | 237,617,999 | 137,617,999 | 137.62% | 25.53% | 112,089,411 | 2.2826 | 62.12% | -22.25% |
-| Long-short top/bottom-5 | 279,937,889 | 179,937,889 | 179.94% | 25.53% | 154,409,300 | 2.2940 | 62.12% | -21.00% |
-
-This is a research proxy from realized `target_ret_5d`, not a broker-level simulation. It does not include order book depth, intraday execution, taxes, lot size, suspended trading, or detailed slippage.
+- Hybrid xLSTM Direction-Excess Blend remains the production candidate.
+- LightGBM-style HGBR is the strongest non-deep baseline by LongShort5.
+- CNN-LSTM is competitive and has the second-best Top5 Direction Accuracy among trainable full-test models.
+- TCN and PatchTST are weaker in this run.
+- Kronos should only be judged after a completed 95-symbol historical zero-shot run.
 
 ---
 
 ## Visualizations
 
 <p align="center">
-  <img src="outputs/figures/best_f6_v2_top5/best_f6_v2_top5_equity_curve.png" alt="BestF6-v2 top-5 equity curve" width="100%">
+  <img src="outputs/figures/final_top5_model_suite/top5_model_suite_longshort.png" alt="Final top-5 model suite LongShort5" width="100%">
 </p>
-
-<p align="center">
-  <img src="outputs/figures/best_f6_v2_top5/best_f6_v2_top5_score_buckets.png" alt="BestF6-v2 score buckets" width="48%">
-  <img src="outputs/figures/best_f6_v2_top5/best_f6_v2_model_longshort5.png" alt="BestF6-v2 model comparison" width="48%">
-</p>
-
-Score buckets on test:
-
-| Score Bucket | Avg Realized t+5 Return | Direction Acc |
-| --- | ---: | ---: |
-| Lowest 20% | -0.0120% | 47.05% |
-| 2 | 0.2666% | 50.13% |
-| 3 | 0.4422% | 52.03% |
-| 4 | 0.6771% | 54.50% |
-| Highest 20% | 1.2697% | 57.06% |
-
-The monotonic bucket pattern is the clearest evidence for positive IC: higher scores realize higher future returns.
 
 ---
 
@@ -126,18 +109,16 @@ The monotonic bucket pattern is the clearest evidence for positive IC: higher sc
 
 | Artifact | Path |
 | --- | --- |
-| Final predictions | `outputs/final/best_f6_v2_predictions.parquet` |
-| Model comparison predictions | `outputs/final/model_compare_top5/` |
-| Top-5 final report | `outputs/reports/best_f6_v2_top5/best_f6_v2_top5_report.md` |
-| Top-5 P/L summary | `outputs/reports/best_f6_v2_top5/best_f6_v2_top5_summary.csv` |
-| Top-5 model comparison | `outputs/reports/best_f6_v2_top5/best_f6_v2_top5_model_compare.csv` |
-| Top-5 trade log | `outputs/reports/best_f6_v2_top5/best_f6_v2_top5_trades.csv` |
-| Equity curve CSV | `outputs/reports/best_f6_v2_top5/best_f6_v2_top5_equity_curve.csv` |
+| Hybrid xLSTM final predictions | `outputs/final/hybrid_xlstm_direction_excess_blend_predictions.parquet` |
+| Final suite predictions | `outputs/final/model_suite_top5/` |
+| Final suite metrics | `outputs/reports/final_top5_model_suite/top5_model_suite_metrics.csv` |
+| Final suite report | `outputs/reports/final_top5_model_suite/top5_model_suite_report.md` |
+| Final suite figure | `outputs/figures/final_top5_model_suite/top5_model_suite_longshort.png` |
 | Technical note | `docs/best_f6_v2_direction_blend.md` |
 
 ---
 
-## Reproduce Final Output
+## Reproduce Final Suite
 
 ### Environment
 
@@ -154,17 +135,24 @@ $env:PYTHONPATH='src'
 python -m vnstock.pipelines.run_build_shared_dataset --config configs/data/dataset_daily.yaml --use-interim
 ```
 
-### Run Final Top-5 Evaluation
+### Run Final Top-5 Suite
 
 ```powershell
-python scripts\evaluate_best_f6_v2_top5.py
+python scripts\run_final_top5_model_suite.py
 ```
 
-This regenerates:
+This trains/inferes CNN-LSTM, TCN, LightGBM-style HGBR, and PatchTST, then compares them with the Hybrid xLSTM blend and the available Kronos reference.
 
-- Top-5 investment P/L.
-- xLSTM-TS pure, iTransformer pure, Kronos zero-shot comparison.
-- Equity curve, score-bucket chart, and model-comparison chart.
+### Kronos Full-Test Reference
+
+Kronos is intentionally not retrained. For historical zero-shot inference:
+
+```powershell
+python scripts\run_kronos_full_test.py
+python scripts\compute_kronos_full_metrics.py
+```
+
+On CPU, this is slow because it forecasts each historical window.
 
 ### Run Tests
 
@@ -180,18 +168,10 @@ python -m pytest tests -q
 vn-stock-prediction/
 ├── configs/                  # Dataset, model, and experiment configs
 ├── data/                     # Raw, interim, and processed K-line data
-├── docs/                     # Data contract, model notes, final BestF6-v2 note
+├── docs/                     # Data contract, model notes, final model note
 ├── outputs/                  # Final top-5 reports, figures, and predictions
 ├── registry/                 # Model checkpoints and manifests
-├── scripts/                  # Final evaluation convenience scripts
+├── scripts/                  # Final evaluation scripts
 ├── src/vnstock/              # Data, models, metrics, and pipeline code
 └── tests/                    # Leakage, target, metric, and pipeline tests
 ```
-
----
-
-## Current Recommendation
-
-Keep **BestF6-v2 top-5** as the main production candidate for stock selection.
-
-Do not chase 65-70% full-universe Direction Accuracy without a leakage audit. For this task, ranking quality and top-k realized return are better aligned with the actual investment use case.

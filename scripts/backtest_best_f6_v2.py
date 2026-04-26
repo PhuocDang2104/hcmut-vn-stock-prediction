@@ -15,7 +15,7 @@ if __name__ == "__main__":
     sys.argv = [
         sys.argv[0],
         "--predictions",
-        str(ROOT / "outputs" / "final" / "best_f6_v2_predictions.parquet"),
+        str(ROOT / "outputs" / "final" / "hybrid_xlstm_direction_excess_blend_predictions.parquet"),
         *sys.argv[1:],
     ]
     runpy.run_module("vnstock.pipelines.run_investment_backtest", run_name="__main__")

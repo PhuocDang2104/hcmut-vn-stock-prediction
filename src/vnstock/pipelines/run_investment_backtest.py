@@ -13,7 +13,7 @@ from vnstock.utils.io import ensure_dir, load_table, save_table
 from vnstock.utils.logging import get_logger
 
 
-DEFAULT_PREDICTIONS = "outputs/final/best_f6_v2_predictions.parquet"
+DEFAULT_PREDICTIONS = "outputs/final/hybrid_xlstm_direction_excess_blend_predictions.parquet"
 
 
 def parse_args() -> argparse.Namespace:
