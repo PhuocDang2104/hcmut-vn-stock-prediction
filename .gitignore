@@ -31,6 +31,10 @@ data/processed/lstm/*.npy
 data/processed/lstm/*.json
 data/processed/itransformer/*.parquet
 data/processed/itransformer/*.json
+data/processed/xlstm_ts/*.npy
+data/processed/xlstm_ts/*.json
+data/processed/patchtst/*.parquet
+data/processed/patchtst/*.json
 data/processed/tft/*.parquet
 data/processed/tft/*.json
 data/processed/kronos/*.csv
@@ -42,6 +46,8 @@ outputs/metrics/*.json
 outputs/metrics/*.csv
 outputs/reports/*.md
 outputs/figures/**/*.png
+!outputs/figures/best_f6_v2_top5/
+!outputs/figures/best_f6_v2_top5/*.png
 registry/experiments/*
 !registry/experiments/.gitkeep
 registry/models/*/*

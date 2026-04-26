@@ -6,6 +6,7 @@ import torch
 from vnstock.models.common.base_trainer import BaseTrainer, TrainingArtifacts
 from vnstock.models.common.calibration import calibrate_direction_threshold
 from vnstock.models.common.sequence_data import (
+    build_effective_feature_columns,
     build_scaled_sequence_splits,
     cap_sequence_samples,
     load_shared_feature_panel,
@@ -44,6 +45,9 @@ class ITransformerTrainer(BaseTrainer):
             if feature_panel.empty:
                 raise ValueError(f"No rows found for symbol_filter={symbol_filter}.")
         feature_columns = resolve_feature_columns(self.config, shared_meta, key="feature_columns")
+        wavelet_config = self.config.get("wavelet_denoise")
+        target_scaling = self.config.get("target_scaling")
+        effective_feature_columns = build_effective_feature_columns(feature_columns, wavelet_config)
         target_column = str(self.config["target"])
         seq_len = int(self.config["seq_len"])
 
@@ -52,6 +56,8 @@ class ITransformerTrainer(BaseTrainer):
             feature_columns=feature_columns,
             target_column=target_column,
             lookback=seq_len,
+            wavelet_config=wavelet_config,
+            target_scaling=target_scaling,
         )
         sequence_splits["train"] = cap_sequence_samples(
             sequence_splits["train"],
@@ -83,6 +89,8 @@ class ITransformerTrainer(BaseTrainer):
             patience=int(self.config.get("patience", 3)),
             huber_delta=float(self.config.get("huber_delta", 0.05)),
             direction_loss_weight=float(self.config.get("direction_loss_weight", 0.0)),
+            rank_loss_weight=float(self.config.get("rank_loss_weight", 0.0)),
+            rank_loss_min_target_diff=float(self.config.get("rank_loss_min_target_diff", 0.0)),
             device=device,
             input_dtype=torch.float32,
             logger=self.logger,
@@ -106,8 +114,9 @@ class ITransformerTrainer(BaseTrainer):
                 input_dtype=torch.float32,
             )
             frame = sample_set.meta.copy()
-            frame[target_column] = sample_set.y
-            frame["y_pred"] = prediction_result.y_pred
+            target_values, prediction_values = _restore_target_scale(sample_set, prediction_result.y_pred)
+            frame[target_column] = target_values
+            frame["y_pred"] = prediction_values
             if prediction_result.direction_score is not None:
                 frame["direction_score"] = prediction_result.direction_score
             raw_prediction_frames[split_name] = frame
@@ -157,16 +166,22 @@ class ITransformerTrainer(BaseTrainer):
                 "model_state_dict": model.state_dict(),
                 "config": self.config,
                 "feature_columns": feature_columns,
+                "effective_feature_columns": effective_feature_columns,
                 "seq_len": seq_len,
                 "direction_loss_weight": float(self.config.get("direction_loss_weight", 0.0)),
+                "rank_loss_weight": float(self.config.get("rank_loss_weight", 0.0)),
+                "rank_loss_min_target_diff": float(self.config.get("rank_loss_min_target_diff", 0.0)),
             },
             checkpoint_path,
         )
         write_json(
             {
                 "feature_columns": feature_columns,
+                "effective_feature_columns": effective_feature_columns,
                 "scalers": scalers,
                 "seq_len": seq_len,
+                "wavelet_denoise": wavelet_config,
+                "target_scaling": target_scaling,
             },
             checkpoint_dir / "preprocess.json",
         )
@@ -178,15 +193,16 @@ class ITransformerTrainer(BaseTrainer):
             checkpoint_dir / "training_history.json",
         )
         spec_path = write_json(
-            build_model_spec(self.config) | {"num_features": len(feature_columns)},
+            build_model_spec(self.config) | {"num_features": len(effective_feature_columns)},
             checkpoint_dir / "model_spec.json",
         )
 
         details = {
             "device": str(device),
             "feature_columns": feature_columns,
+            "effective_feature_columns": effective_feature_columns,
             "seq_len": seq_len,
-            "num_features": len(feature_columns),
+            "num_features": len(effective_feature_columns),
             "symbol_filter": symbol_filter,
             "best_valid_loss": training_result.best_valid_loss,
             "direction_calibration": {
@@ -212,3 +228,13 @@ class ITransformerTrainer(BaseTrainer):
             note="iTransformer benchmark run completed with inverted variate multitask attention.",
             details=details,
         )
+
+
+def _restore_target_scale(sample_set, predictions):
+    if sample_set.meta.empty or not {"target_raw", "target_mean", "target_std"}.issubset(sample_set.meta.columns):
+        return sample_set.y, predictions
+    means = sample_set.meta["target_mean"].to_numpy(dtype=float)
+    stds = sample_set.meta["target_std"].to_numpy(dtype=float)
+    target_values = sample_set.meta["target_raw"].to_numpy(dtype=float)
+    prediction_values = predictions * stds + means
+    return target_values, prediction_values

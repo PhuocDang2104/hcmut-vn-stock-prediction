@@ -43,6 +43,21 @@ def resolve_feature_columns(
     return list(metadata.get(key, []))
 
 
+def build_effective_feature_columns(
+    feature_columns: list[str],
+    wavelet_config: dict[str, Any] | None = None,
+) -> list[str]:
+    if not _wavelet_enabled(wavelet_config):
+        return list(feature_columns)
+
+    denoise_columns = _resolve_wavelet_columns(feature_columns, wavelet_config or {})
+    suffix = str((wavelet_config or {}).get("suffix", "_denoised"))
+    denoised_names = [f"{column}{suffix}" for column in denoise_columns]
+    if bool((wavelet_config or {}).get("append", True)):
+        return [*feature_columns, *denoised_names]
+    return denoised_names
+
+
 def fit_symbol_zscore_scalers(
     feature_panel: pd.DataFrame,
     feature_columns: list[str],
@@ -66,8 +81,12 @@ def build_scaled_sequence_splits(
     feature_columns: list[str],
     target_column: str,
     lookback: int,
+    wavelet_config: dict[str, Any] | None = None,
+    target_scaling: dict[str, Any] | None = None,
 ) -> tuple[dict[str, SequenceSampleSet], dict[str, dict[str, list[float]]]]:
     scalers = fit_symbol_zscore_scalers(feature_panel, feature_columns)
+    target_scalers = fit_symbol_target_scalers(feature_panel, target_column) if _target_scaling_enabled(target_scaling) else {}
+    effective_feature_columns = build_effective_feature_columns(feature_columns, wavelet_config)
     buckets: dict[str, dict[str, Any]] = {
         split_name: {"X": [], "y": [], "meta": []} for split_name in ("train", "valid", "test")
     }
@@ -76,6 +95,8 @@ def build_scaled_sequence_splits(
         ordered = group.sort_values("date").reset_index(drop=True)
         symbol_key = str(symbol)
         if symbol_key not in scalers:
+            continue
+        if _target_scaling_enabled(target_scaling) and symbol_key not in target_scalers:
             continue
 
         mean = np.asarray(scalers[symbol_key]["mean"], dtype=np.float32)
@@ -90,7 +111,23 @@ def build_scaled_sequence_splits(
             if split_name not in buckets:
                 continue
             window = values[end_idx - lookback + 1 : end_idx + 1]
-            target_value = targets[end_idx]
+            window = _apply_wavelet_to_window(
+                window,
+                feature_columns=feature_columns,
+                wavelet_config=wavelet_config,
+            )
+            target_raw = targets[end_idx]
+            target_value = target_raw
+            meta_extra: dict[str, float] = {}
+            if _target_scaling_enabled(target_scaling):
+                target_mean = float(target_scalers[symbol_key]["mean"])
+                target_std = float(target_scalers[symbol_key]["std"])
+                target_value = (target_raw - target_mean) / target_std
+                meta_extra = {
+                    "target_raw": float(target_raw),
+                    "target_mean": target_mean,
+                    "target_std": target_std,
+                }
             if np.isnan(window).any() or np.isnan(target_value):
                 continue
             buckets[split_name]["X"].append(window.astype(np.float32, copy=False))
@@ -100,10 +137,31 @@ def build_scaled_sequence_splits(
                     "symbol": symbol_key,
                     "date": ordered.loc[end_idx, "date"],
                     "split": split_name,
+                    **meta_extra,
                 }
             )
 
-    return _finalize_sequence_buckets(buckets, lookback, len(feature_columns), dtype=np.float32), scalers
+    if target_scalers:
+        scalers = {**scalers, "__target__": target_scalers}
+    return _finalize_sequence_buckets(buckets, lookback, len(effective_feature_columns), dtype=np.float32), scalers
+
+
+def fit_symbol_target_scalers(
+    feature_panel: pd.DataFrame,
+    target_column: str,
+) -> dict[str, dict[str, float]]:
+    scalers: dict[str, dict[str, float]] = {}
+    train_frame = feature_panel.loc[feature_panel["split"] == "train", ["symbol", target_column]].copy()
+    for symbol, group in train_frame.groupby("symbol"):
+        values = group[target_column].dropna().to_numpy(dtype=np.float32)
+        if len(values) == 0:
+            continue
+        mean = float(np.mean(values))
+        std = float(np.std(values))
+        if not np.isfinite(std) or std <= 1e-6:
+            std = 1.0
+        scalers[str(symbol)] = {"mean": mean, "std": std}
+    return scalers
 
 
 def fit_quantile_token_bins(
@@ -206,3 +264,91 @@ def _finalize_sequence_buckets(
             meta["date"] = pd.to_datetime(meta["date"])
         sequence_sets[split_name] = SequenceSampleSet(X=X, y=y, meta=meta)
     return sequence_sets
+
+
+def _wavelet_enabled(wavelet_config: dict[str, Any] | None) -> bool:
+    return bool(wavelet_config and wavelet_config.get("enabled", False))
+
+
+def _target_scaling_enabled(target_scaling: dict[str, Any] | None) -> bool:
+    return bool(target_scaling and target_scaling.get("enabled", False))
+
+
+def _resolve_wavelet_columns(
+    feature_columns: list[str],
+    wavelet_config: dict[str, Any],
+) -> list[str]:
+    configured = wavelet_config.get("feature_columns") or feature_columns
+    selected = [str(column) for column in configured if str(column) in feature_columns]
+    if not selected:
+        raise ValueError("wavelet_denoise.feature_columns did not match any input feature columns.")
+    return selected
+
+
+def _apply_wavelet_to_window(
+    window: np.ndarray,
+    *,
+    feature_columns: list[str],
+    wavelet_config: dict[str, Any] | None,
+) -> np.ndarray:
+    if not _wavelet_enabled(wavelet_config):
+        return window
+
+    config = wavelet_config or {}
+    denoise_columns = _resolve_wavelet_columns(feature_columns, config)
+    denoise_indices = [feature_columns.index(column) for column in denoise_columns]
+    denoised = np.empty((window.shape[0], len(denoise_indices)), dtype=np.float32)
+    for output_idx, feature_idx in enumerate(denoise_indices):
+        denoised[:, output_idx] = wavelet_denoise_window(
+            window[:, feature_idx],
+            wavelet=str(config.get("wavelet", "db4")),
+            level=int(config.get("level", 2)),
+            mode=str(config.get("mode", "symmetric")),
+            threshold_mode=str(config.get("threshold_mode", "soft")),
+        )
+
+    if bool(config.get("append", True)):
+        return np.concatenate([window, denoised], axis=1).astype(np.float32, copy=False)
+    return denoised.astype(np.float32, copy=False)
+
+
+def wavelet_denoise_window(
+    values: np.ndarray,
+    *,
+    wavelet: str = "db4",
+    level: int = 2,
+    mode: str = "symmetric",
+    threshold_mode: str = "soft",
+) -> np.ndarray:
+    try:
+        import pywt
+    except ModuleNotFoundError as exc:
+        raise ModuleNotFoundError(
+            "PyWavelets is required for causal wavelet denoising. "
+            "Install it with `pip install PyWavelets`."
+        ) from exc
+
+    x = np.asarray(values, dtype=float)
+    if x.ndim != 1:
+        raise ValueError("wavelet_denoise_window expects a 1D array.")
+    if len(x) < 4 or not np.isfinite(x).all():
+        return x.astype(np.float32, copy=False)
+
+    wavelet_obj = pywt.Wavelet(wavelet)
+    max_level = pywt.dwt_max_level(data_len=len(x), filter_len=wavelet_obj.dec_len)
+    safe_level = max(1, min(int(level), max_level))
+    coeffs = pywt.wavedec(x, wavelet=wavelet_obj, mode=mode, level=safe_level)
+    if len(coeffs) <= 1:
+        return x.astype(np.float32, copy=False)
+
+    detail = coeffs[-1]
+    sigma = np.median(np.abs(detail - np.median(detail))) / 0.6745
+    if not np.isfinite(sigma) or sigma <= 0:
+        return x.astype(np.float32, copy=False)
+    threshold = sigma * np.sqrt(2.0 * np.log(len(x)))
+    denoised_coeffs = [coeffs[0]]
+    for coeff in coeffs[1:]:
+        denoised_coeffs.append(pywt.threshold(coeff, threshold, mode=threshold_mode))
+
+    reconstructed = pywt.waverec(denoised_coeffs, wavelet=wavelet_obj, mode=mode)
+    return reconstructed[: len(x)].astype(np.float32, copy=False)

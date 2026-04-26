@@ -1,0 +1,22 @@
+model_name: xlstm_ts
+context_length: 64
+batch_size: 256
+eval_batch_size: 512
+epochs: 6
+learning_rate: 0.0005
+weight_decay: 0.0001
+patience: 2
+huber_delta: 0.05
+direction_loss_weight: 0.005
+direction_calibration_min_improvement: 0.001
+hidden_dim: 64
+num_blocks: 2
+dropout: 0.1
+target: target_ret_5d
+model_version: residual_lstm_close_only_v1
+predictions_dir: outputs/experiments/wavelet_denoise/predictions/xlstm_ts_close_only
+feature_columns:
+  - close
+seed: 42
+device: auto
+horizon: 5

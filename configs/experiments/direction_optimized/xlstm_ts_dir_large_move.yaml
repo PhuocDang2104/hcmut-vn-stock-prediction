@@ -1,0 +1,46 @@
+model_name: xlstm_ts
+context_length: 64
+batch_size: 256
+eval_batch_size: 512
+epochs: 6
+learning_rate: 0.0005
+weight_decay: 0.0001
+patience: 3
+train_sample_cap: 60000
+valid_sample_cap: 16000
+huber_delta: 0.05
+direction_loss_weight: 0.2
+direction_pos_weight: auto
+direction_large_move_quantile: 0.6
+direction_large_move_weight: 2.0
+direction_abs_return_weight: 2.0
+direction_score_source: auto
+direction_calibration_metric: accuracy
+direction_calibration_min_improvement: 0.0
+direction_calibration_min_positive_rate: 0.25
+direction_calibration_max_positive_rate: 0.85
+checkpoint_metric: valid_balanced_direction_accuracy
+checkpoint_mode: max
+hidden_dim: 80
+num_blocks: 2
+dropout: 0.1
+target: target_ret_5d
+model_version: residual_lstm_direction_large_move_v1
+predictions_dir: outputs/experiments/direction_optimized/predictions/xlstm_ts_dir_large_move
+feature_columns:
+  - ret_1d
+  - ret_5d
+  - log_volume
+  - hl_spread
+  - oc_change
+  - rolling_vol_5
+  - rolling_vol_20
+  - ma_ratio_5_20
+  - open_rel
+  - high_rel
+  - low_rel
+  - ma5_rel
+  - ma20_rel
+seed: 42
+device: auto
+horizon: 5

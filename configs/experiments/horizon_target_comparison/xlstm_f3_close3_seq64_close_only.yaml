@@ -1,0 +1,25 @@
+model_name: xlstm_ts
+context_length: 64
+batch_size: 512
+eval_batch_size: 1024
+epochs: 3
+learning_rate: 0.0005
+weight_decay: 0.0001
+patience: 2
+train_sample_cap: 20000
+valid_sample_cap: 8000
+huber_delta: 0.05
+direction_loss_weight: 0.0
+hidden_dim: 64
+num_blocks: 2
+dropout: 0.1
+target: target_log_close_3d
+target_scaling:
+  enabled: true
+model_version: htc_f3_close3_seq64_close_only
+predictions_dir: experiments/horizon_target_comparison/predictions/xlstm_f3_close3_seq64_close_only
+feature_columns:
+  - log_close
+seed: 44
+device: auto
+horizon: 3

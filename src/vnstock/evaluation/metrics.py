@@ -45,6 +45,24 @@ def directional_accuracy(y_true: np.ndarray, y_score: np.ndarray, threshold: flo
     return float(np.mean((y_true > 0) == (y_score > threshold)))
 
 
+def balanced_directional_accuracy(y_true: np.ndarray, y_score: np.ndarray, threshold: float = 0.0) -> float:
+    actual_up = y_true > 0
+    predicted_up = y_score > threshold
+    actual_down = ~actual_up
+    if not actual_up.any() or not actual_down.any():
+        return math.nan
+    recall_up_value = float(np.mean(predicted_up[actual_up]))
+    recall_down_value = float(np.mean(~predicted_up[actual_down]))
+    return 0.5 * (recall_up_value + recall_down_value)
+
+
+def majority_baseline_accuracy(y_true: np.ndarray) -> float:
+    if len(y_true) == 0:
+        return math.nan
+    positive_rate = float(np.mean(y_true > 0))
+    return max(positive_rate, 1.0 - positive_rate)
+
+
 def precision_up(y_true: np.ndarray, y_score: np.ndarray, threshold: float = 0.0) -> float:
     predicted_up = y_score > threshold
     if not predicted_up.any():
@@ -62,6 +80,28 @@ def recall_up(y_true: np.ndarray, y_score: np.ndarray, threshold: float = 0.0) -
 def f1_up(y_true: np.ndarray, y_score: np.ndarray, threshold: float = 0.0) -> float:
     precision_value = precision_up(y_true, y_score, threshold)
     recall_value = recall_up(y_true, y_score, threshold)
+    if precision_value + recall_value == 0:
+        return 0.0
+    return 2 * precision_value * recall_value / (precision_value + recall_value)
+
+
+def precision_down(y_true: np.ndarray, y_score: np.ndarray, threshold: float = 0.0) -> float:
+    predicted_down = y_score <= threshold
+    if not predicted_down.any():
+        return 0.0
+    return float(np.mean(y_true[predicted_down] <= 0))
+
+
+def recall_down(y_true: np.ndarray, y_score: np.ndarray, threshold: float = 0.0) -> float:
+    actual_down = y_true <= 0
+    if not actual_down.any():
+        return 0.0
+    return float(np.mean(y_score[actual_down] <= threshold))
+
+
+def f1_down(y_true: np.ndarray, y_score: np.ndarray, threshold: float = 0.0) -> float:
+    precision_value = precision_down(y_true, y_score, threshold)
+    recall_value = recall_down(y_true, y_score, threshold)
     if precision_value + recall_value == 0:
         return 0.0
     return 2 * precision_value * recall_value / (precision_value + recall_value)
@@ -156,11 +196,16 @@ def compute_metrics(frame: pd.DataFrame) -> dict[str, float]:
             "pearson": math.nan,
             "spearman": math.nan,
             "directional_accuracy": math.nan,
+            "balanced_directional_accuracy": math.nan,
+            "majority_baseline_accuracy": math.nan,
             "confident_directional_accuracy_top20": math.nan,
             "large_move_directional_accuracy_2pct": math.nan,
             "precision_up": math.nan,
             "recall_up": math.nan,
             "f1_up": math.nan,
+            "precision_down": math.nan,
+            "recall_down": math.nan,
+            "f1_down": math.nan,
             "information_coefficient": math.nan,
             "top_k_hit_rate": math.nan,
             "top_k_realized_return": math.nan,
@@ -180,6 +225,8 @@ def compute_metrics(frame: pd.DataFrame) -> dict[str, float]:
         "pearson": pearson(y_true, y_pred),
         "spearman": spearman(y_true, y_pred),
         "directional_accuracy": directional_accuracy(y_true, direction_score, direction_threshold),
+        "balanced_directional_accuracy": balanced_directional_accuracy(y_true, direction_score, direction_threshold),
+        "majority_baseline_accuracy": majority_baseline_accuracy(y_true),
         "confident_directional_accuracy_top20": confident_directional_accuracy(
             y_true,
             direction_score,
@@ -195,6 +242,9 @@ def compute_metrics(frame: pd.DataFrame) -> dict[str, float]:
         "precision_up": precision_up(y_true, direction_score, direction_threshold),
         "recall_up": recall_up(y_true, direction_score, direction_threshold),
         "f1_up": f1_up(y_true, direction_score, direction_threshold),
+        "precision_down": precision_down(y_true, direction_score, direction_threshold),
+        "recall_down": recall_down(y_true, direction_score, direction_threshold),
+        "f1_down": f1_down(y_true, direction_score, direction_threshold),
         "direction_threshold": direction_threshold,
         "direction_positive_rate": float(np.mean(direction_score > direction_threshold)),
         "information_coefficient": information_coefficient(subset),

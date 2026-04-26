@@ -44,7 +44,8 @@ def build_shared_feature_panel(raw_panel: pd.DataFrame, config: dict) -> SharedD
     featured = featured.dropna(subset=feature_columns + ["target_ret_5d"]).reset_index(drop=True)
     validate_monotonic_dates(featured)
 
-    feature_panel = featured[SHARED_COLUMNS + ["time_idx", "group_id", "target_dir_5d"]].copy()
+    panel_columns = list(dict.fromkeys([*SHARED_COLUMNS, "time_idx", "group_id", "target_dir_5d"]))
+    feature_panel = featured[panel_columns].copy()
     splits = split_frame(feature_panel)
     metadata = {
         "target_name": config["target"]["name"],

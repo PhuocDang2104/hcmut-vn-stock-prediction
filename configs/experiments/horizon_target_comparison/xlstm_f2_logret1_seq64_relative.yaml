@@ -1,0 +1,51 @@
+model_name: xlstm_ts
+context_length: 64
+batch_size: 512
+eval_batch_size: 1024
+epochs: 3
+learning_rate: 0.0005
+weight_decay: 0.0001
+patience: 2
+train_sample_cap: 20000
+valid_sample_cap: 8000
+huber_delta: 0.05
+direction_loss_weight: 0.05
+direction_pos_weight: auto
+direction_score_source: auto
+direction_calibration_metric: balanced_accuracy
+checkpoint_metric: valid_balanced_direction_accuracy
+checkpoint_mode: max
+hidden_dim: 64
+num_blocks: 2
+dropout: 0.1
+target: target_log_ret_1d
+model_version: htc_f2_logret1_seq64_relative
+predictions_dir: experiments/horizon_target_comparison/predictions/xlstm_f2_logret1_seq64_relative
+feature_columns:
+  - ret_1d
+  - ret_3d
+  - ret_5d
+  - ret_10d
+  - ret_20d
+  - log_volume
+  - volume_zscore_20
+  - hl_spread
+  - oc_change
+  - gap_rel
+  - body_ratio
+  - upper_shadow_ratio
+  - lower_shadow_ratio
+  - rolling_vol_5
+  - rolling_vol_20
+  - vol_ratio_5_20
+  - ma_ratio_5_20
+  - open_rel
+  - high_rel
+  - low_rel
+  - ma5_rel
+  - ma20_rel
+  - rsi_14
+  - macd_hist
+seed: 43
+device: auto
+horizon: 1

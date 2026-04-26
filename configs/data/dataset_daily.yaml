@@ -113,18 +113,39 @@ split:
 
 features:
   - ret_1d
+  - ret_3d
   - ret_5d
+  - ret_10d
+  - ret_20d
+  - log_close
   - log_volume
+  - volume_zscore_20
   - hl_spread
   - oc_change
+  - gap_rel
+  - body_ratio
+  - upper_shadow_ratio
+  - lower_shadow_ratio
   - rolling_vol_5
   - rolling_vol_20
+  - vol_ratio_5_20
   - ma_ratio_5_20
   - open_rel
   - high_rel
   - low_rel
   - ma5_rel
   - ma20_rel
+  - rsi_14
+  - macd_hist
+  - market_ret_1d
+  - market_ret_5d
+  - market_ret_20d
+  - market_vol_20
+  - excess_ret_1d
+  - excess_ret_5d
+  - excess_ret_20d
+  - relative_strength_5d
+  - relative_strength_20d
 
 kronos_features:
   - open_rel

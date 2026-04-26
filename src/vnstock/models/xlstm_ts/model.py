@@ -44,21 +44,33 @@ class XLSTMTSRegressor(nn.Module):
         hidden_dim: int,
         num_blocks: int,
         dropout: float,
+        pooling: str = "last",
     ) -> None:
         super().__init__()
+        if pooling not in {"last", "gated_concat"}:
+            raise ValueError(f"Unsupported xLSTM pooling mode: {pooling}")
+        self.pooling = pooling
         self.input_projection = nn.Linear(num_features, hidden_dim)
         self.blocks = nn.ModuleList(
             [ResidualLSTMBlock(hidden_dim=hidden_dim, dropout=dropout) for _ in range(num_blocks)]
         )
         self.output_norm = nn.LayerNorm(hidden_dim)
+        head_input_dim = hidden_dim
+        if pooling == "gated_concat":
+            self.gate = nn.Sequential(
+                nn.LayerNorm(hidden_dim),
+                nn.Linear(hidden_dim, 1),
+            )
+            self.gated_output_norm = nn.LayerNorm(hidden_dim * 2)
+            head_input_dim = hidden_dim * 2
         self.return_head = nn.Sequential(
-            nn.Linear(hidden_dim, hidden_dim),
+            nn.Linear(head_input_dim, hidden_dim),
             nn.GELU(),
             nn.Dropout(dropout),
             nn.Linear(hidden_dim, 1),
         )
         self.direction_head = nn.Sequential(
-            nn.Linear(hidden_dim, hidden_dim),
+            nn.Linear(head_input_dim, hidden_dim),
             nn.GELU(),
             nn.Dropout(dropout),
             nn.Linear(hidden_dim, 1),
@@ -68,7 +80,13 @@ class XLSTMTSRegressor(nn.Module):
         hidden = self.input_projection(x)
         for block in self.blocks:
             hidden = block(hidden)
-        pooled = self.output_norm(hidden[:, -1, :])
+        last_state = self.output_norm(hidden[:, -1, :])
+        if self.pooling == "gated_concat":
+            weights = torch.softmax(self.gate(hidden).squeeze(-1), dim=1)
+            gated_pool = torch.sum(hidden * weights.unsqueeze(-1), dim=1)
+            pooled = self.gated_output_norm(torch.cat([last_state, gated_pool], dim=-1))
+        else:
+            pooled = last_state
         return {
             "prediction": self.return_head(pooled).squeeze(-1),
             "direction_logit": self.direction_head(pooled).squeeze(-1),
@@ -81,6 +99,7 @@ def build_model(config: dict, num_features: int) -> XLSTMTSRegressor:
         hidden_dim=int(config["hidden_dim"]),
         num_blocks=int(config["num_blocks"]),
         dropout=float(config["dropout"]),
+        pooling=str(config.get("pooling", "last")),
     )
 
 
@@ -91,6 +110,7 @@ def build_model_spec(config: dict) -> dict[str, object]:
         "hidden_dim": config["hidden_dim"],
         "num_blocks": config["num_blocks"],
         "dropout": config["dropout"],
+        "pooling": config.get("pooling", "last"),
         "target": config["target"],
         "implementation": "residual_lstm_multitask_proxy",
         "direction_loss_weight": config.get("direction_loss_weight", 0.0),

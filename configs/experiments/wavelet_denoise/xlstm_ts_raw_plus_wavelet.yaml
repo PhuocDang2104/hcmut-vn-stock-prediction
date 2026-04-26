@@ -1,0 +1,53 @@
+model_name: xlstm_ts
+context_length: 64
+batch_size: 256
+eval_batch_size: 512
+epochs: 6
+learning_rate: 0.0005
+weight_decay: 0.0001
+patience: 2
+huber_delta: 0.05
+direction_loss_weight: 0.005
+direction_calibration_min_improvement: 0.001
+hidden_dim: 96
+num_blocks: 2
+dropout: 0.1
+target: target_ret_5d
+model_version: residual_lstm_raw_plus_wavelet_v1
+predictions_dir: outputs/experiments/wavelet_denoise/predictions/xlstm_ts_raw_plus_wavelet
+feature_columns:
+  - ret_1d
+  - ret_5d
+  - log_volume
+  - hl_spread
+  - oc_change
+  - rolling_vol_5
+  - rolling_vol_20
+  - ma_ratio_5_20
+  - open_rel
+  - high_rel
+  - low_rel
+  - ma5_rel
+  - ma20_rel
+wavelet_denoise:
+  enabled: true
+  append: true
+  suffix: _denoised
+  wavelet: db4
+  level: 1
+  mode: symmetric
+  threshold_mode: soft
+  feature_columns:
+    - ret_1d
+    - ret_5d
+    - hl_spread
+    - oc_change
+    - ma_ratio_5_20
+    - open_rel
+    - high_rel
+    - low_rel
+    - ma5_rel
+    - ma20_rel
+seed: 42
+device: auto
+horizon: 5
