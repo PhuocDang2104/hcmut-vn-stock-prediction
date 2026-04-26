@@ -56,6 +56,28 @@ iTransformer is removed from the final suite. Current comparison:
 
 Kronos is not retrained. The current row is partial because the CPU full-test zero-shot process stopped at `61/95` symbols.
 
+## Upgrade Ablation
+
+After the architecture review, two focused upgrade candidates were tested against the current production artifact:
+
+- `Hybrid xLSTM gated direction`: gated-concat xLSTM with stronger direction training. Pairwise rank loss was disabled in this CPU rerun because full pairwise rank training was too slow locally.
+- `MultiKernel CNN-BiGRU attention`: multi-kernel Conv1D branches, channel gate, BiGRU, and temporal attention pooling.
+
+Result:
+
+| Model | IC | RankIC | ICIR | RankICIR | Direction Acc | Balanced Acc | Top5 Return | LongShort5 | Top5 Acc | Production Score |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Hybrid xLSTM Direction-Excess Blend | 0.0904 | 0.0852 | 0.4653 | 0.4690 | 52.65% | 52.41% | 1.7120% | 1.7462% | 58.53% | 1.3519 |
+| MultiKernel CNN-BiGRU attention | 0.0143 | -0.0006 | 0.0742 | -0.0031 | 49.99% | 50.17% | 0.9557% | 0.4391% | 56.45% | -0.6395 |
+| Hybrid xLSTM gated direction | 0.0198 | 0.0275 | 0.1048 | 0.1510 | 50.52% | 50.52% | 0.5738% | 0.3471% | 52.97% | -0.7124 |
+
+Decision:
+
+- Keep `Hybrid xLSTM Direction-Excess Blend` as the only production candidate.
+- Do not replace it with the current gated xLSTM or MultiKernel CNN-BiGRU ablations.
+- Keep the upgrade metrics for audit, but loser prediction artifacts are removed from `outputs/final/model_upgrade_top5/`.
+- The next worthwhile upgrade is true rank-aware training/checkpointing on stronger hardware, not another small CPU ablation.
+
 ## Leakage Controls
 
 - Train, validation and test split by time.
@@ -73,7 +95,9 @@ Kronos is not retrained. The current row is partial because the CPU full-test ze
 | Final suite metrics | `outputs/reports/final_top5_model_suite/top5_model_suite_metrics.csv` |
 | Final suite report | `outputs/reports/final_top5_model_suite/top5_model_suite_report.md` |
 | Final suite figure | `outputs/figures/final_top5_model_suite/top5_model_suite_longshort.png` |
+| Upgrade ablation metrics | `outputs/reports/model_upgrade_top5/upgrade_metrics.csv` |
+| Upgrade ablation report | `outputs/reports/model_upgrade_top5/upgrade_report.md` |
 
 ## Recommendation
 
-Keep Hybrid xLSTM Direction-Excess Blend as the main production candidate. LightGBM-style HGBR is the strongest fast tabular baseline. CNN-LSTM is worth keeping as an auxiliary neural baseline. TCN and PatchTST are currently weaker and should not be promoted unless future tuning improves IC and LongShort5.
+Keep Hybrid xLSTM Direction-Excess Blend as the main production candidate. LightGBM-style HGBR is the strongest fast tabular baseline. CNN-LSTM is worth keeping as an auxiliary neural baseline. TCN and PatchTST are currently weaker and should not be promoted unless future tuning improves IC and LongShort5. The latest upgrade ablation did not beat the current Hybrid xLSTM production artifact, so the production prediction file is unchanged.

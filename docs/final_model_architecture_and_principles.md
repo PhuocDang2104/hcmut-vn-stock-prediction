@@ -466,7 +466,31 @@ Model chưa nên promote:
 - `PatchTST`: metric hiện yếu hơn rõ.
 - `Kronos`: chỉ là zero-shot reference, chưa full 95-symbol historical test.
 
-## 12. Artifact Liên Quan
+## 12. Upgrade Ablation Sau Kiến Trúc Review
+
+Hai cải tiến được test trực tiếp trên full out-of-time test:
+
+| Candidate | Thay đổi chính |
+| --- | --- |
+| `Hybrid xLSTM gated direction` | Bật gated-concat pooling, hidden `128`, `3` blocks, direction loss mạnh hơn. Pairwise rank loss bị tắt trong CPU rerun vì quá chậm. |
+| `MultiKernel CNN-BiGRU attention` | Conv1D kernel `3/5/9/15`, channel gate, BiGRU, concat last state + attention pooling. |
+
+Kết quả:
+
+| Model | IC | RankIC | ICIR | RankICIR | Direction Acc | Balanced Acc | Top5 Return | LongShort5 | Top5 Direction Acc |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Hybrid xLSTM Direction-Excess Blend | 0.0904 | 0.0852 | 0.4653 | 0.4690 | 52.65% | 52.41% | 1.7120% | 1.7462% | 58.53% |
+| MultiKernel CNN-BiGRU attention | 0.0143 | -0.0006 | 0.0742 | -0.0031 | 49.99% | 50.17% | 0.9557% | 0.4391% | 56.45% |
+| Hybrid xLSTM gated direction | 0.0198 | 0.0275 | 0.1048 | 0.1510 | 50.52% | 50.52% | 0.5738% | 0.3471% | 52.97% |
+
+Kết luận:
+
+- Cả hai ablation đều không thắng production artifact hiện tại.
+- Gated pooling hoặc multi-kernel CNN tự thân chưa đủ; lợi thế chính của production model vẫn là direction-excess blend đã align tốt với ranking/stock-selection.
+- Nếu muốn cải thiện tiếp, cần train rank-aware thật sự trên GPU hoặc CPU lâu hơn, chọn checkpoint theo valid `RankIC/LongShort5`, và test cost-adjusted portfolio metrics.
+- Trong repo hiện tại chỉ giữ prediction artifact của cấu hình thắng; loser prediction artifacts của upgrade ablation đã bị xóa khỏi `outputs/final/model_upgrade_top5/`.
+
+## 13. Artifact Liên Quan
 
 | Artifact | Path |
 | --- | --- |
@@ -476,4 +500,6 @@ Model chưa nên promote:
 | Hybrid xLSTM prediction | `outputs/final/hybrid_xlstm_direction_excess_blend_predictions.parquet` |
 | Final comparison figure | `outputs/figures/final_top5_model_suite/top5_model_suite_longshort.png` |
 | Final suite runner | `scripts/run_final_top5_model_suite.py` |
-
+| Upgrade runner | `scripts/run_model_upgrade_top5.py` |
+| Upgrade metrics | `outputs/reports/model_upgrade_top5/upgrade_metrics.csv` |
+| Upgrade report | `outputs/reports/model_upgrade_top5/upgrade_report.md` |
