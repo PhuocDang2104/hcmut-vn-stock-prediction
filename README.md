@@ -114,7 +114,8 @@ Decision:
 | Final suite metrics | `outputs/reports/final_top5_model_suite/top5_model_suite_metrics.csv` |
 | Final suite report | `outputs/reports/final_top5_model_suite/top5_model_suite_report.md` |
 | Final suite figure | `outputs/figures/final_top5_model_suite/top5_model_suite_longshort.png` |
-| Technical note | `docs/best_f6_v2_direction_blend.md` |
+| Final model architecture note | `docs/final_model_architecture_and_principles.md` |
+| Legacy final model note | `docs/best_f6_v2_direction_blend.md` |
 
 ---
 
