@@ -16,7 +16,7 @@
 
 ## Abstract
 
-This repository implements a leakage-safe K-line forecasting pipeline for 5-session stock selection. The final selected model is now named **Hybrid xLSTM Direction-Excess Blend**. It replaces the previous informal `BestF6-v2` name.
+This repository implements a leakage-safe K-line forecasting pipeline for 5-session stock selection. The current production score is **Rank-Aware Calibrated Hybrid xLSTM**. It is a validation-tuned top-5 calibration on top of the previous **Hybrid xLSTM Direction-Excess Blend** score.
 
 Main target:
 
@@ -26,7 +26,8 @@ target_ret_5d = close[t+5] / close[t] - 1
 
 The final benchmark removes iTransformer and compares:
 
-- Hybrid xLSTM Direction-Excess Blend
+- Rank-Aware Calibrated Hybrid xLSTM
+- Hybrid xLSTM Direction-Excess Blend baseline
 - CNN-LSTM
 - TCN
 - LightGBM-style tabular gradient boosting
@@ -56,14 +57,17 @@ flowchart LR
     E --> F[Top-5 metrics and ranking report]
 ```
 
-Hybrid xLSTM score:
+Current production score:
 
 ```text
-final_score =
-    0.6 * normalized(return/ranking signal)
-  + 0.2 * normalized(direction signal)
-  + 0.2 * normalized(excess/market-relative signal)
+rank_aware_score =
+    0.9 * cross_section_zscore(previous_hybrid_score)
+  - 0.1 * cross_section_zscore(vol_neg)
+
+where vol_neg = -rolling_vol_20
 ```
+
+Equivalently, the selected validation rule adds a small positive volatility-regime tilt to the previous Hybrid xLSTM score. The rule was selected on validation only, then locked for out-of-time test.
 
 Prediction contract:
 
@@ -78,7 +82,8 @@ y_true, y_pred, target_name, horizon, run_id
 
 | Model | Scope | Rows | IC | RankIC | Direction Acc | Balanced Acc | Top5 Return | LongShort5 | Top5 Acc |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Hybrid xLSTM Direction-Excess Blend | full test | 29,535 | 0.0904 | 0.0852 | 52.65% | 52.41% | 1.7120% | 1.7462% | 58.53% |
+| Rank-Aware Calibrated Hybrid xLSTM | full test | 29,535 | 0.0886 | 0.0792 | 52.64% | 52.07% | 1.7140% | 1.7775% | 58.17% |
+| Hybrid xLSTM Direction-Excess Blend baseline | full test | 29,535 | 0.0904 | 0.0852 | 52.55% | 52.19% | 1.7120% | 1.7462% | 58.53% |
 | LightGBM-style HGBR | full test | 29,535 | 0.0545 | 0.0379 | 50.53% | 49.89% | 1.2315% | 1.3634% | 55.41% |
 | CNN-LSTM | full test | 29,535 | 0.0522 | 0.0433 | 51.80% | 50.32% | 1.2969% | 1.2686% | 56.70% |
 | TCN | full test | 29,535 | 0.0212 | 0.0216 | 48.91% | 48.89% | 0.7223% | 0.4266% | 54.68% |
@@ -89,7 +94,8 @@ Kronos is listed as a reference only. The current full-test Kronos run stopped a
 
 Decision:
 
-- Hybrid xLSTM Direction-Excess Blend remains the production candidate.
+- Rank-Aware Calibrated Hybrid xLSTM is the current production candidate because it improves portfolio-oriented metrics and cost-adjusted backtest results.
+- Hybrid xLSTM Direction-Excess Blend remains the core baseline and the stable source score.
 - LightGBM-style HGBR is the strongest non-deep baseline by LongShort5.
 - CNN-LSTM is competitive and has the second-best Top5 Direction Accuracy among trainable full-test models.
 - TCN and PatchTST are weaker in this run.
@@ -109,11 +115,13 @@ Decision:
 
 | Artifact | Path |
 | --- | --- |
-| Hybrid xLSTM final predictions | `outputs/final/hybrid_xlstm_direction_excess_blend_predictions.parquet` |
+| Current production predictions | `outputs/final/hybrid_xlstm_direction_excess_blend_predictions.parquet` |
+| Rank-aware selected predictions | `outputs/final/rank_aware_calibrated_hybrid_predictions.parquet` |
 | Final suite predictions | `outputs/final/model_suite_top5/` |
 | Final suite metrics | `outputs/reports/final_top5_model_suite/top5_model_suite_metrics.csv` |
 | Final suite report | `outputs/reports/final_top5_model_suite/top5_model_suite_report.md` |
 | Final suite figure | `outputs/figures/final_top5_model_suite/top5_model_suite_longshort.png` |
+| Rank-aware upgrade report | `outputs/reports/rank_aware_hybrid_upgrade/rank_aware_upgrade_report.md` |
 | Final model architecture note | `docs/final_model_architecture_and_principles.md` |
 | Legacy final model note | `docs/best_f6_v2_direction_blend.md` |
 
