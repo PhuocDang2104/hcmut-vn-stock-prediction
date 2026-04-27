@@ -116,7 +116,6 @@ Decision:
 | Final suite figure | `outputs/figures/final_top5_model_suite/top5_model_suite_longshort.png` |
 | Final model architecture note | `docs/final_model_architecture_and_principles.md` |
 | Legacy final model note | `docs/best_f6_v2_direction_blend.md` |
-| Upgrade ablation report | `outputs/reports/model_upgrade_top5/upgrade_report.md` |
 
 ---
 
