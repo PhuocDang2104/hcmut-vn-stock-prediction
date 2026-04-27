@@ -221,6 +221,7 @@ Important caveat:
 | Final suite report | `outputs/reports/final_top5_model_suite/top5_model_suite_report.md` |
 | Final suite figure | `outputs/figures/final_top5_model_suite/top5_model_suite_longshort.png` |
 | Final suite runner | `scripts/run_final_top5_model_suite.py` |
+| 10M VND investment application report | `docs/investment_application_10m.md` |
 
 ## 11. How To Reproduce
 
@@ -234,6 +235,12 @@ Run tests:
 
 ```powershell
 python -m pytest tests -q
+```
+
+Generate the 10M VND investment application report:
+
+```powershell
+python scripts\report_investment_application_10m.py
 ```
 
 ## 12. Recommendation

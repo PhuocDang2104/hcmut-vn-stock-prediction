@@ -1,0 +1,2 @@
+mode,initial_capital,final_capital,total_profit,total_return,benchmark_final_capital,benchmark_total_profit,benchmark_total_return,periods,avg_daily_bucket_return_after_cost,hit_rate,sharpe_proxy,max_drawdown,excess_return_vs_benchmark
+rolling_5day_bucket_proxy,10000000.0,24836923.769152027,14836923.769152027,1.4836923769152026,14142569.929366602,4142569.9293666016,0.4142569929366602,327,0.002824022801077853,0.636085626911315,5.127055750397607,-0.1609486363673407,1.0694353839785424
