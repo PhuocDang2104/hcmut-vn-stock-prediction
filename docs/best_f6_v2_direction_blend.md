@@ -56,41 +56,6 @@ iTransformer is removed from the final suite. Current comparison:
 
 Kronos is not retrained. The current row is partial because the CPU full-test zero-shot process stopped at `61/95` symbols.
 
-## Long-Only Portfolio Layer Test
-
-The long-only test keeps the Hybrid xLSTM baseline as the core score. It does not optimize `LongShort5` as the primary objective.
-
-Validation selection objective:
-
-```text
-0.30 * z(total_return)
-+ 0.20 * z(sharpe_proxy)
-- 0.15 * z(abs(max_drawdown))
-- 0.10 * z(avg_turnover)
-+ 0.15 * z(Top5_Direction_Acc)
-+ 0.10 * z(RankIC)
-```
-
-The best validation overlay was:
-
-```text
-score = 0.90 * z(baseline_score) + 0.10 * z(relative_strength_20d)
-portfolio = confidence_cash_50
-```
-
-Locked test result:
-
-| Candidate | IC | RankIC | Top5 Return | Top5 Acc | Total Return | Final Capital | Sharpe Proxy | Max Drawdown | Avg Turnover | Avg Exposure |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Baseline current | 0.0904 | 0.0852 | 1.7120% | 58.53% | 137.62% | 237,617,999 | 2.2826 | -22.25% | 1.50 | 1.00 |
-| Defensive overlay | 0.0905 | 0.0794 | 1.8580% | 59.02% | 125.28% | 225,280,447 | 2.3430 | -17.51% | 1.22 | 0.81 |
-
-Decision:
-
-- Keep `Hybrid xLSTM Direction-Excess Blend` baseline as long-only production.
-- The defensive overlay improves drawdown, Sharpe and Top5 hit-rate, but total return is lower on locked test.
-- Use the overlay only as a risk-management variant, not as the main production score.
-
 ## Leakage Controls
 
 - Train, validation and test split by time.
@@ -104,14 +69,11 @@ Decision:
 | Artifact | Path |
 | --- | --- |
 | Hybrid xLSTM final prediction | `outputs/final/hybrid_xlstm_direction_excess_blend_predictions.parquet` |
-| Hybrid xLSTM baseline alias | `outputs/final/hybrid_xlstm_baseline_predictions.parquet` |
-| Long-only production alias | `outputs/final/hybrid_xlstm_long_only_production_predictions.parquet` |
 | Final suite predictions | `outputs/final/model_suite_top5/` |
 | Final suite metrics | `outputs/reports/final_top5_model_suite/top5_model_suite_metrics.csv` |
 | Final suite report | `outputs/reports/final_top5_model_suite/top5_model_suite_report.md` |
 | Final suite figure | `outputs/figures/final_top5_model_suite/top5_model_suite_longshort.png` |
-| Long-only portfolio report | `outputs/reports/long_only_portfolio_layer/long_only_portfolio_layer_report.md` |
 
 ## Recommendation
 
-Keep Hybrid xLSTM Direction-Excess Blend as the main production candidate, especially for long-only top-5 trading. LightGBM-style HGBR is the strongest fast tabular baseline. CNN-LSTM is worth keeping as an auxiliary neural baseline. TCN and PatchTST are currently weaker and should not be promoted unless future tuning improves IC and top-5 long-only metrics.
+Keep Hybrid xLSTM Direction-Excess Blend as the main production candidate. LightGBM-style HGBR is the strongest fast tabular baseline. CNN-LSTM is worth keeping as an auxiliary neural baseline. TCN and PatchTST are currently weaker and should not be promoted unless future tuning improves IC and LongShort5.

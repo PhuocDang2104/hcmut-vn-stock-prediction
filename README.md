@@ -90,7 +90,6 @@ Kronos is listed as a reference only. The current full-test Kronos run stopped a
 Decision:
 
 - Hybrid xLSTM Direction-Excess Blend remains the production candidate.
-- For long-only trading, the baseline Hybrid score remains production. The tested confidence/cash overlay improved drawdown and Sharpe, but reduced locked-test total return, so it is only a defensive overlay idea.
 - LightGBM-style HGBR is the strongest non-deep baseline by LongShort5.
 - CNN-LSTM is competitive and has the second-best Top5 Direction Accuracy among trainable full-test models.
 - TCN and PatchTST are weaker in this run.
@@ -111,13 +110,10 @@ Decision:
 | Artifact | Path |
 | --- | --- |
 | Hybrid xLSTM final predictions | `outputs/final/hybrid_xlstm_direction_excess_blend_predictions.parquet` |
-| Hybrid xLSTM baseline alias | `outputs/final/hybrid_xlstm_baseline_predictions.parquet` |
-| Long-only production alias | `outputs/final/hybrid_xlstm_long_only_production_predictions.parquet` |
 | Final suite predictions | `outputs/final/model_suite_top5/` |
 | Final suite metrics | `outputs/reports/final_top5_model_suite/top5_model_suite_metrics.csv` |
 | Final suite report | `outputs/reports/final_top5_model_suite/top5_model_suite_report.md` |
 | Final suite figure | `outputs/figures/final_top5_model_suite/top5_model_suite_longshort.png` |
-| Long-only portfolio layer report | `outputs/reports/long_only_portfolio_layer/long_only_portfolio_layer_report.md` |
 | Final model architecture note | `docs/final_model_architecture_and_principles.md` |
 | Legacy final model note | `docs/best_f6_v2_direction_blend.md` |
 
@@ -147,14 +143,6 @@ python scripts\run_final_top5_model_suite.py
 ```
 
 This trains/inferes CNN-LSTM, TCN, LightGBM-style HGBR, and PatchTST, then compares them with the Hybrid xLSTM blend and the available Kronos reference.
-
-### Run Long-Only Portfolio Layer
-
-```powershell
-python scripts\run_long_only_portfolio_layer.py
-```
-
-This keeps the Hybrid xLSTM baseline as the core score and tests light long-only overlays: small calibration, downside/momentum/liquidity filters, rank/risk sizing, and cash-regime logic.
 
 ### Kronos Full-Test Reference
 

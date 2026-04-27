@@ -466,36 +466,7 @@ Model chưa nên promote:
 - `PatchTST`: metric hiện yếu hơn rõ.
 - `Kronos`: chỉ là zero-shot reference, chưa full 95-symbol historical test.
 
-## 12. Long-Only Portfolio Layer
-
-Sau khi test một calibration thiên về long-short/risk, hướng production được đổi lại về long-only top-5. Kết luận thực tế:
-
-- Không thay backbone.
-- Không thay core score.
-- Giữ `Hybrid xLSTM Direction-Excess Blend` làm ranking signal chính.
-- Chỉ thử portfolio layer nhẹ: calibration nhỏ, filter downside/momentum/liquidity, sizing, và cash-regime.
-
-Best validation overlay:
-
-```text
-score = 0.90 * z(baseline_score) + 0.10 * z(relative_strength_20d)
-portfolio = confidence_cash_50
-```
-
-Locked test:
-
-| Candidate | IC | RankIC | Top5 Return | Top5 Acc | Long-only total return | Sharpe proxy | Max drawdown |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Baseline current | 0.0904 | 0.0852 | 1.7120% | 58.53% | 137.62% | 2.2826 | -22.25% |
-| Defensive overlay | 0.0905 | 0.0794 | 1.8580% | 59.02% | 125.28% | 2.3430 | -17.51% |
-
-Decision:
-
-- Production vẫn là `baseline_current`.
-- Defensive overlay chỉ dùng như ý tưởng risk management vì giảm drawdown nhưng làm giảm total return.
-- Với long-only, `IC`, `RankIC`, `Top5_Return`, `Top5_Direction_Acc`, net total return, Sharpe và max drawdown quan trọng hơn `LongShort5`.
-
-## 13. Artifact Liên Quan
+## 12. Artifact Liên Quan
 
 | Artifact | Path |
 | --- | --- |
@@ -503,9 +474,6 @@ Decision:
 | Final report | `outputs/reports/final_top5_model_suite/top5_model_suite_report.md` |
 | Final predictions | `outputs/final/model_suite_top5/` |
 | Hybrid xLSTM prediction | `outputs/final/hybrid_xlstm_direction_excess_blend_predictions.parquet` |
-| Hybrid xLSTM baseline alias | `outputs/final/hybrid_xlstm_baseline_predictions.parquet` |
-| Long-only production alias | `outputs/final/hybrid_xlstm_long_only_production_predictions.parquet` |
 | Final comparison figure | `outputs/figures/final_top5_model_suite/top5_model_suite_longshort.png` |
 | Final suite runner | `scripts/run_final_top5_model_suite.py` |
-| Long-only portfolio runner | `scripts/run_long_only_portfolio_layer.py` |
-| Long-only portfolio report | `outputs/reports/long_only_portfolio_layer/long_only_portfolio_layer_report.md` |
+
