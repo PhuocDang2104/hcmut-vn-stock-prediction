@@ -1,0 +1,63 @@
+{
+  "selected_score_spec": "baseline_rs20_010",
+  "selected_score_weights": {
+    "base_score": 0.9,
+    "relative_strength_20d": 0.1
+  },
+  "selected_portfolio_spec": {
+    "name": "confidence_cash_50",
+    "filter_mode": "none",
+    "sizing_mode": "equal",
+    "exposure_mode": "confidence_50"
+  },
+  "selection_split": "valid",
+  "selection_objective": {
+    "total_return": 0.3,
+    "sharpe_proxy": 0.2,
+    "max_drawdown_abs": -0.15,
+    "avg_turnover": -0.1,
+    "Top5_Direction_Acc": 0.15,
+    "RankIC": 0.1
+  },
+  "thresholds": {
+    "market_vol_median": 0.021170186309629368,
+    "confidence_median": 1.0690160231545192
+  },
+  "production_decision": "baseline_current",
+  "valid_winner": {
+    "score_spec": "baseline_rs20_010",
+    "portfolio_spec": "confidence_cash_50",
+    "rows": 4826.0,
+    "dates": 259.0,
+    "symbols": 95.0,
+    "IC": 0.07811470008380136,
+    "RankIC": 0.07217079163330874,
+    "ICIR": 0.27242115421098234,
+    "RankICIR": 0.27693101821919647,
+    "Direction_Acc": 0.518856195607128,
+    "Balanced_Acc": 0.520090800637975,
+    "Majority": 0.5066307501036055,
+    "F1_up": 0.5570392979778711,
+    "F1_down": 0.47346938775510206,
+    "Top5_Return": 0.0061945056579352925,
+    "Top5_Direction_Acc": 0.5333333333333333,
+    "LongShort5_Diagnostic": 0.006808125579479725,
+    "periods": 52.0,
+    "final_capital": 135705418.4735413,
+    "total_return": 0.35705418473541295,
+    "total_profit": 35705418.47354129,
+    "benchmark_total_return": 0.21474540407083098,
+    "excess_return_vs_benchmark": 0.14230878066458197,
+    "avg_gross_period_return": 0.008814782131832314,
+    "avg_net_period_return": 0.00634266674721693,
+    "period_volatility": 0.030572281599284042,
+    "sharpe_proxy": 1.472852684244294,
+    "hit_rate": 0.5769230769230769,
+    "avg_top5_hit_rate": 0.517948717948718,
+    "max_drawdown": -0.103774252865109,
+    "avg_turnover": 1.6480769230769228,
+    "avg_exposure": 0.8846153846153846,
+    "max_drawdown_abs": 0.103774252865109,
+    "selection_score": 1.4121343877700205
+  }
+}
