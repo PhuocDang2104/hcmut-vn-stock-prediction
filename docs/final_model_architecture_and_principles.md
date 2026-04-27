@@ -441,22 +441,22 @@ IC, RankIC, Top5_Return, LongShort5, Top5_Direction_Acc
 
 ## 11. Kết Luận Kỹ Thuật
 
-Model nên giữ làm production candidate hiện tại:
+Model nên giữ làm production candidate:
 
 ```text
-Rank-Aware Calibrated Hybrid xLSTM
+Hybrid xLSTM Direction-Excess Blend
 ```
 
 Lý do:
 
-- Nó giữ `Hybrid xLSTM Direction-Excess Blend` làm source score chính.
-- Nó thêm calibration được chọn trên validation theo objective top-5/long-short.
-- Nó cải thiện `LongShort5`, cost-adjusted total return, Sharpe proxy và max drawdown trong backtest top-5.
-- Trade-off: `IC` và `RankIC` thấp hơn baseline một chút, nên baseline Hybrid vẫn được giữ làm reference source score.
+- Tốt nhất về `IC` và `RankIC`, tức có signal ranking rõ nhất.
+- Tốt nhất về `Top5_Return`, tức chọn được nhóm top 5 có realized return cao nhất.
+- Tốt nhất về `LongShort5`, tức phân tách top và bottom tốt nhất.
+- Tốt nhất về `Top5_Direction_Acc`, tức trong danh mục thật sự mua, xác suất chọn đúng hướng cao nhất.
+- Kiến trúc blend align trực tiếp với mục tiêu stock-selection hơn các baseline direct-return.
 
 Model nên giữ làm baseline phụ:
 
-- `Hybrid xLSTM Direction-Excess Blend`: source score ổn định, RankIC cao hơn bản calibrated.
 - `LightGBM-style HGBR`: baseline tabular nhanh, mạnh, dễ debug.
 - `CNN-LSTM`: neural baseline cạnh tranh, đáng giữ để kiểm tra robustness.
 
@@ -474,8 +474,6 @@ Model chưa nên promote:
 | Final report | `outputs/reports/final_top5_model_suite/top5_model_suite_report.md` |
 | Final predictions | `outputs/final/model_suite_top5/` |
 | Hybrid xLSTM prediction | `outputs/final/hybrid_xlstm_direction_excess_blend_predictions.parquet` |
-| Rank-aware selected prediction | `outputs/final/rank_aware_calibrated_hybrid_predictions.parquet` |
 | Final comparison figure | `outputs/figures/final_top5_model_suite/top5_model_suite_longshort.png` |
 | Final suite runner | `scripts/run_final_top5_model_suite.py` |
-| Rank-aware upgrade runner | `scripts/run_rank_aware_hybrid_upgrade.py` |
-| Rank-aware upgrade report | `outputs/reports/rank_aware_hybrid_upgrade/rank_aware_upgrade_report.md` |
+
