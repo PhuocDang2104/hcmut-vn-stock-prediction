@@ -465,8 +465,33 @@ Model chưa nên promote:
 - `TCN`: metric hiện yếu hơn rõ.
 - `PatchTST`: metric hiện yếu hơn rõ.
 - `Kronos`: chỉ là zero-shot reference, chưa full 95-symbol historical test.
+- `A1 Multi-Head LongOnlyRank`: kiến trúc multi-head đã test nhưng giảm `IC`, `RankIC`, `Top5_Return`, `Top5_Direction_Acc` và long-only return so với Hybrid baseline.
 
-## 12. Artifact Liên Quan
+## 12. Architecture Ablation A1
+
+Mục tiêu A1 là kiểm tra một nâng cấp kiến trúc ít rủi ro trước khi xây multi-stream hoặc cross-sectional transformer.
+
+Thay đổi:
+
+- Giữ backbone residual xLSTM-style: hidden `96`, `2` blocks, dropout `0.1`.
+- Thêm heads: `ret_1d`, `ret_3d`, `ret_5d`, computed `ret_10d`, `excess_5d`, cross-sectional `rank_5d`, `dir_5d`.
+- Checkpoint theo validation long-only score, không theo validation loss.
+- Final score: `0.50*z(rank_5d) + 0.25*z(ret_5d) + 0.15*z(excess_5d) + 0.10*z(dir_5d)`.
+
+Locked test:
+
+| Model | Rows | IC | RankIC | Top5 Return | Top5 Acc | Long-only total return | Sharpe | Max DD |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Hybrid baseline | 28,585 | 0.0904 | 0.0871 | 1.6467% | 58.30% | 118.36% | 2.1187 | -22.25% |
+| A1 Multi-Head LongOnlyRank | 28,585 | 0.0419 | 0.0445 | 0.9171% | 55.08% | 42.20% | 1.1505 | -23.34% |
+
+Decision:
+
+- Không promote A1.
+- Baseline Hybrid vẫn là production.
+- Kết quả này ủng hộ nhận định: không nên chỉ thêm head hoặc làm model nhìn phức tạp hơn. Nếu tiếp tục nâng kiến trúc, ưu tiên tiếp theo nên là cross-sectional context encoder hoặc multi-stream feature grouping, nhưng phải kiểm soát overfit và so sánh locked test chặt.
+
+## 13. Artifact Liên Quan
 
 | Artifact | Path |
 | --- | --- |
@@ -476,4 +501,5 @@ Model chưa nên promote:
 | Hybrid xLSTM prediction | `outputs/final/hybrid_xlstm_direction_excess_blend_predictions.parquet` |
 | Final comparison figure | `outputs/figures/final_top5_model_suite/top5_model_suite_longshort.png` |
 | Final suite runner | `scripts/run_final_top5_model_suite.py` |
-
+| Architecture ablation runner | `scripts/run_architecture_ablation_longonly.py` |
+| Architecture ablation report | `outputs/reports/architecture_ablation_longonly/architecture_ablation_report.md` |

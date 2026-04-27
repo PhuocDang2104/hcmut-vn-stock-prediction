@@ -56,6 +56,47 @@ iTransformer is removed from the final suite. Current comparison:
 
 Kronos is not retrained. The current row is partial because the CPU full-test zero-shot process stopped at `61/95` symbols.
 
+## Architecture Ablation A1
+
+The first architecture-only upgrade tested was:
+
+```text
+Hybrid xLSTM Multi-Head LongOnlyRank
+```
+
+It keeps the same residual xLSTM-style backbone size and adds heads for:
+
+- `ret_1d`
+- `ret_3d`
+- `ret_5d`
+- computed `ret_10d`
+- `excess_5d`
+- cross-sectional `rank_5d`
+- `dir_5d`
+
+Final score:
+
+```text
+score =
+    0.50 * z(rank_5d)
+  + 0.25 * z(ret_5d)
+  + 0.15 * z(excess_5d)
+  + 0.10 * z(dir_5d)
+```
+
+Locked test on the same rows:
+
+| Model | Rows | IC | RankIC | Top5 Return | Top5 Acc | Long-only Return | Final Capital | Sharpe | Max DD |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Hybrid baseline | 28,585 | 0.0904 | 0.0871 | 1.6467% | 58.30% | 118.36% | 218,355,690 | 2.1187 | -22.25% |
+| A1 Multi-Head LongOnlyRank | 28,585 | 0.0419 | 0.0445 | 0.9171% | 55.08% | 42.20% | 142,195,733 | 1.1505 | -23.34% |
+
+Decision:
+
+- Do not promote A1.
+- Keep `Hybrid xLSTM Direction-Excess Blend` as production.
+- The result suggests that simply adding multi-head outputs is not enough; future architecture work should focus on cross-sectional context or multi-stream feature grouping, but only with strict long-only promotion rules.
+
 ## Leakage Controls
 
 - Train, validation and test split by time.
@@ -73,7 +114,8 @@ Kronos is not retrained. The current row is partial because the CPU full-test ze
 | Final suite metrics | `outputs/reports/final_top5_model_suite/top5_model_suite_metrics.csv` |
 | Final suite report | `outputs/reports/final_top5_model_suite/top5_model_suite_report.md` |
 | Final suite figure | `outputs/figures/final_top5_model_suite/top5_model_suite_longshort.png` |
+| Architecture ablation report | `outputs/reports/architecture_ablation_longonly/architecture_ablation_report.md` |
 
 ## Recommendation
 
-Keep Hybrid xLSTM Direction-Excess Blend as the main production candidate. LightGBM-style HGBR is the strongest fast tabular baseline. CNN-LSTM is worth keeping as an auxiliary neural baseline. TCN and PatchTST are currently weaker and should not be promoted unless future tuning improves IC and LongShort5.
+Keep Hybrid xLSTM Direction-Excess Blend as the main production candidate. LightGBM-style HGBR is the strongest fast tabular baseline. CNN-LSTM is worth keeping as an auxiliary neural baseline. TCN and PatchTST are currently weaker. A1 Multi-Head LongOnlyRank is also not promoted because it underperforms the Hybrid baseline on locked long-only metrics.

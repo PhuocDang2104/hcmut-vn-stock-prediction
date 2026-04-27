@@ -90,6 +90,7 @@ Kronos is listed as a reference only. The current full-test Kronos run stopped a
 Decision:
 
 - Hybrid xLSTM Direction-Excess Blend remains the production candidate.
+- Architecture A1 `Multi-Head LongOnlyRank` was tested and not promoted because it reduced IC, RankIC, Top5 Return, Top5 hit-rate, and long-only total return versus the Hybrid baseline.
 - LightGBM-style HGBR is the strongest non-deep baseline by LongShort5.
 - CNN-LSTM is competitive and has the second-best Top5 Direction Accuracy among trainable full-test models.
 - TCN and PatchTST are weaker in this run.
@@ -114,6 +115,7 @@ Decision:
 | Final suite metrics | `outputs/reports/final_top5_model_suite/top5_model_suite_metrics.csv` |
 | Final suite report | `outputs/reports/final_top5_model_suite/top5_model_suite_report.md` |
 | Final suite figure | `outputs/figures/final_top5_model_suite/top5_model_suite_longshort.png` |
+| Architecture ablation report | `outputs/reports/architecture_ablation_longonly/architecture_ablation_report.md` |
 | Final model architecture note | `docs/final_model_architecture_and_principles.md` |
 | Legacy final model note | `docs/best_f6_v2_direction_blend.md` |
 
@@ -143,6 +145,14 @@ python scripts\run_final_top5_model_suite.py
 ```
 
 This trains/inferes CNN-LSTM, TCN, LightGBM-style HGBR, and PatchTST, then compares them with the Hybrid xLSTM blend and the available Kronos reference.
+
+### Run Architecture Ablation A1
+
+```powershell
+python scripts\run_architecture_ablation_longonly.py
+```
+
+This tests `Hybrid xLSTM Multi-Head LongOnlyRank` against the Hybrid baseline on the same locked test rows.
 
 ### Kronos Full-Test Reference
 
